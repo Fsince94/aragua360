@@ -1,7 +1,5 @@
-
 import React, { useMemo } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { Pannellum } from 'pannellum-react';
 import { usePlaces } from '../hooks/usePlaces';
 import { TOURIST_PLACES } from '../constants';
 import { ArrowLeft, Map } from 'lucide-react';
@@ -23,30 +21,29 @@ const GalleryPage: React.FC = () => {
   }
 
   return (
-    <div className="relative h-full w-full bg-black">
-      <Pannellum
-        width="100%"
-        height="100%"
-        image={place.imageUrl360}
-        pitch={10}
-        yaw={180}
-        hfov={110}
-        autoLoad
-        showZoomCtrl={false}
-        showFullscreenCtrl={false}
-      >
-        <Pannellum.Hotspot type="info" pitch={10} yaw={-160} text={place.description} />
-      </Pannellum>
+    <div className="relative h-full w-full bg-black flex flex-col justify-end">
+      <img 
+        src={place.imageUrl} 
+        alt={`Vista de ${place.name}`} 
+        className="absolute inset-0 w-full h-full object-cover z-0" 
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10"></div>
 
-      <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center">
-        <button onClick={() => navigate('/')} className="p-3 bg-white/30 backdrop-blur-sm rounded-full text-white hover:bg-white/50 transition-colors">
+      {/* Botón para volver atrás */}
+      <div className="absolute top-4 left-4 z-20">
+        <button onClick={() => navigate(-1)} className="p-3 bg-white/30 backdrop-blur-sm rounded-full text-white hover:bg-white/50 transition-colors">
           <ArrowLeft />
         </button>
-        <div className="bg-white/30 backdrop-blur-sm rounded-full px-4 py-2 text-white">
-          <h1 className="text-xl font-bold">{place.name}</h1>
-        </div>
       </div>
-       <button onClick={() => navigate('/')} className="absolute bottom-6 right-6 z-10 p-4 bg-lake rounded-full text-white shadow-lg hover:bg-lake-dark transition-transform hover:scale-110 flex items-center gap-2">
+      
+      {/* Contenido de texto */}
+      <div className="relative z-20 p-6 text-white">
+          <h1 className="text-3xl font-bold mb-2 drop-shadow-lg">{place.name}</h1>
+          <p className="text-base drop-shadow-md">{place.description}</p>
+      </div>
+
+       {/* Botón para volver al mapa */}
+       <button onClick={() => navigate('/')} className="absolute bottom-6 right-6 z-20 p-4 bg-lake rounded-full text-white shadow-lg hover:bg-lake-dark transition-transform hover:scale-110 flex items-center gap-2">
          <Map size={24}/>
          <span className="font-semibold hidden sm:block">Volver al Mapa</span>
       </button>

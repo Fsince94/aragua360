@@ -1,4 +1,3 @@
-
 // 💡 Aquí definimos las "interfaces" que describen la forma de nuestros datos.
 //    Esto es clave en TypeScript para evitar errores y hacer el código más predecible.
 //    Sigue el principio de Segregación de Interfaces (ISP), ya que cada tipo tiene un propósito claro.
@@ -14,7 +13,7 @@ export interface Place {
   description: string;
   coordinates: Coordinates;
   qrCodeValue: string;
-  imageUrl360: string;
+  imageUrl: string;
 }
 
 export interface PlacesContextType {
