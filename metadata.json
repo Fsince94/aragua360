@@ -1,0 +1,8 @@
+{
+  "name": "app360",
+  "description": "An interactive tourism PWA for the state of Aragua, Venezuela. Explore destinations on a map, scan QR codes on-site to unlock immersive 360° galleries, and track your journey.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}

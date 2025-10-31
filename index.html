@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aragua 360</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                green: '#2A4D32',
+                white: '#F0F5F0',
+                yellow: '#FFC107',
+                gray: '#4A5568',
+              },
+              // Legacy colors for compatibility if needed
+              nature: { DEFAULT: '#2A4D32', dark: '#38A169' },
+              lake: { DEFAULT: '#0288D1', dark: '#03A9F4' },
+              sun: { DEFAULT: '#FFC107', dark: '#F6E05E' },
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      .leaflet-container {
+        height: 100%;
+        width: 100%;
+      }
+      .leaflet-popup-content-wrapper {
+        background-color: #ffffff;
+        color: #333;
+        border-radius: 8px;
+      }
+      .dark .leaflet-popup-content-wrapper {
+        background-color: #1f2937;
+        color: #f3f4f6;
+      }
+      .leaflet-popup-tip {
+         background-color: #ffffff;
+      }
+      .dark .leaflet-popup-tip {
+         background-color: #1f2937;
+      }
+      .leaflet-control-zoom-in, .leaflet-control-zoom-out {
+        background-color: #ffffff !important;
+        color: #333 !important;
+        border: 1px solid #ddd !important;
+      }
+      .dark .leaflet-control-zoom-in, .dark .leaflet-control-zoom-out {
+        background-color: #1f2937 !important;
+        color: #f3f4f6 !important;
+        border: 1px solid #4b5563 !important;
+      }
+      .leaflet-control-attribution {
+        display: none !important;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.4",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.548.0",
+    "html5-qrcode": "https://aistudiocdn.com/html5-qrcode@^2.3.8",
+    "react-leaflet": "https://aistudiocdn.com/react-leaflet@^5.0.0",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24",
+    "leaflet": "https://aistudiocdn.com/leaflet@^1.9.4",
+    "pannellum-react": "https://aistudiocdn.com/pannellum-react@^1.2.4"
+  }
+}
+</script>
+</head>
+  <body class="bg-brand-white dark:bg-gray-950 transition-colors duration-300">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
