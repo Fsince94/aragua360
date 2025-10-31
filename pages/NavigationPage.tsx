@@ -1,5 +1,5 @@
 
-import React, 'react';
+import React from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet';
 import L from 'leaflet';
@@ -75,6 +75,11 @@ const NavigationPage: React.FC = () => {
     const [userPosition, setUserPosition] = React.useState<Coordinates | null>(null);
     const [isTracking, setIsTracking] = React.useState(false);
     
+    // 💡 Optimización de rendimiento: Memoizamos los íconos de los lugares.
+    //    Esto evita que los íconos se recalculen en cada renderizado de la vista de selección.
+    const unlockedPlaceIcon = React.useMemo(() => createPlaceIcon(true), []);
+    const lockedPlaceIcon = React.useMemo(() => createPlaceIcon(false), []);
+
     // 🧩 Este useEffect es el corazón de la navegación en tiempo real.
     //    Se activa al montar la página y solicita la ubicación.
     React.useEffect(() => {
@@ -116,7 +121,7 @@ const NavigationPage: React.FC = () => {
                 <MapContainer center={[10.3, -67.6]} zoom={9} ref={mapRef} className="h-full w-full z-0" zoomControl={false}>
                     <TileLayer url={isDarkMode ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"} />
                     {TOURIST_PLACES.map((p) => (
-                        <Marker key={`select-marker-${p.id}`} position={[p.coordinates.lat, p.coordinates.lng]} icon={createPlaceIcon(isUnlocked(p.id))} eventHandlers={{ click: () => navigate(`/navigate/${p.id}`) }} />
+                        <Marker key={`select-marker-${p.id}`} position={[p.coordinates.lat, p.coordinates.lng]} icon={isUnlocked(p.id) ? unlockedPlaceIcon : lockedPlaceIcon} eventHandlers={{ click: () => navigate(`/navigate/${p.id}`) }} />
                     ))}
                 </MapContainer>
                 <button onClick={() => navigate('/')} className="absolute top-4 left-4 z-10 p-3 bg-white/50 backdrop-blur-sm rounded-full text-gray-800 dark:text-white dark:bg-gray-800/50 hover:bg-white/70 dark:hover:bg-gray-700/70 transition-colors">

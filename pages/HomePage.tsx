@@ -35,6 +35,13 @@ const HomePage: React.FC = () => {
     const [view, setView] = useState<'map' | 'list'>('map');
     const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
 
+    // 💡 Optimización de rendimiento: Memoizamos los íconos.
+    //    'useMemo' evita que los objetos de ícono se recalculen en cada renderizado.
+    //    Esto es crucial para el rendimiento del mapa, especialmente con muchos marcadores
+    //    o cuando el estado del componente se actualiza frecuentemente (ej. al filtrar).
+    const unlockedIcon = useMemo(() => createIcon(true), []);
+    const lockedIcon = useMemo(() => createIcon(false), []);
+
     // 🧩 'useMemo' optimiza el rendimiento recalculando la lista de lugares
     //    solo cuando el filtro o el estado de desbloqueo cambian.
     const filteredPlaces = useMemo(() => {
@@ -108,51 +115,53 @@ const HomePage: React.FC = () => {
                 </div>
             </header>
 
+            {/* ⚙️ Optimización de renderizado: Se mantienen ambos elementos (mapa y lista) en el DOM.
+                En lugar de montarlos y desmontarlos al cambiar de vista (lo cual es costoso para el mapa),
+                simplemente alternamos su visibilidad con CSS ('hidden').
+                Esto preserva el estado del mapa (zoom, centro, etc.) y hace que el cambio de vista sea instantáneo. */}
             <div className="flex-grow relative">
-                {view === 'map' ? (
-                    <div className="h-full w-full">
-                        <MapContainer center={[10.3, -67.6]} zoom={9} ref={mapRef} className="h-full w-full" zoomControl={true}>
-                            <TileLayer url={isDarkMode ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"} />
-                            {filteredPlaces.map((place) => {
-                                const unlocked = isUnlocked(place.id);
-                                return (
-                                    <Marker key={place.id} position={[place.coordinates.lat, place.coordinates.lng]} icon={createIcon(unlocked)} eventHandlers={{ click: () => handlePlaceClick(place) }}>
-                                        <Popup>
-                                            <div className="text-center w-48">
-                                                <h3 className="font-bold text-base mb-1">{place.name}</h3>
-                                                <p className="text-xs mb-2">{place.description}</p>
-                                                <button onClick={() => handlePlaceClick(place)} className={`w-full py-2 px-3 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${unlocked ? 'bg-brand-yellow text-gray-900 hover:opacity-90' : 'bg-brand-green text-white hover:opacity-90'}`}>
-                                                    {unlocked ? <Unlock size={14} /> : <Lock size={14} />}
-                                                    {unlocked ? 'Ver Galería' : 'Escanear QR'}
-                                                </button>
-                                            </div>
-                                        </Popup>
-                                    </Marker>
-                                );
-                            })}
-                        </MapContainer>
-                        <button onClick={centerOnUser} aria-label="Centrar en mi ubicación" className="absolute bottom-6 right-6 z-[1000] p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg text-brand-green dark:text-white transition-transform hover:scale-110">
-                            <LocateFixed size={24} />
-                        </button>
-                    </div>
-                ) : (
-                    <ul className="p-4 space-y-3 overflow-y-auto h-full">
-                        {filteredPlaces.map(place => {
+                <div className={`h-full w-full ${view === 'map' ? 'block' : 'hidden'}`}>
+                    <MapContainer center={[10.3, -67.6]} zoom={9} ref={mapRef} className="h-full w-full" zoomControl={true}>
+                        <TileLayer url={isDarkMode ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"} />
+                        {filteredPlaces.map((place) => {
                             const unlocked = isUnlocked(place.id);
                             return (
-                                <li key={place.id} onClick={() => handlePlaceClick(place)} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md flex items-center gap-4 cursor-pointer transition-transform hover:scale-[1.02]">
-                                    <div className={`flex-shrink-0 p-3 rounded-full ${unlocked ? 'bg-brand-yellow/20 text-brand-yellow' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}>
-                                        {unlocked ? <Unlock size={24} /> : <Lock size={24} />}
-                                    </div>
-                                    <div className="flex-grow min-w-0">
-                                        <h3 className="font-bold text-gray-800 dark:text-white truncate">{place.name}</h3>
-                                        <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{place.description}</p>
-                                    </div>
-                                </li>
+                                <Marker key={place.id} position={[place.coordinates.lat, place.coordinates.lng]} icon={unlocked ? unlockedIcon : lockedIcon} eventHandlers={{ click: () => handlePlaceClick(place) }}>
+                                    <Popup>
+                                        <div className="text-center w-48">
+                                            <h3 className="font-bold text-base mb-1">{place.name}</h3>
+                                            <p className="text-xs mb-2">{place.description}</p>
+                                            <button onClick={() => handlePlaceClick(place)} className={`w-full py-2 px-3 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${unlocked ? 'bg-brand-yellow text-gray-900 hover:opacity-90' : 'bg-brand-green text-white hover:opacity-90'}`}>
+                                                {unlocked ? <Unlock size={14} /> : <Lock size={14} />}
+                                                {unlocked ? 'Ver Galería' : 'Escanear QR'}
+                                            </button>
+                                        </div>
+                                    </Popup>
+                                </Marker>
                             );
                         })}
-                    </ul>
-                )}
+                    </MapContainer>
+                    <button onClick={centerOnUser} aria-label="Centrar en mi ubicación" className="absolute bottom-6 right-6 z-[1000] p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg text-brand-green dark:text-white transition-transform hover:scale-110">
+                        <LocateFixed size={24} />
+                    </button>
+                </div>
+                
+                <ul className={`p-4 space-y-3 overflow-y-auto h-full ${view === 'list' ? 'block' : 'hidden'}`}>
+                    {filteredPlaces.map(place => {
+                        const unlocked = isUnlocked(place.id);
+                        return (
+                            <li key={place.id} onClick={() => handlePlaceClick(place)} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md flex items-center gap-4 cursor-pointer transition-transform hover:scale-[1.02]">
+                                <div className={`flex-shrink-0 p-3 rounded-full ${unlocked ? 'bg-brand-yellow/20 text-brand-yellow' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}>
+                                    {unlocked ? <Unlock size={24} /> : <Lock size={24} />}
+                                </div>
+                                <div className="flex-grow min-w-0">
+                                    <h3 className="font-bold text-gray-800 dark:text-white truncate">{place.name}</h3>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{place.description}</p>
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
             </div>
         </div>
     );
