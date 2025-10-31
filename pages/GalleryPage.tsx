@@ -42,7 +42,7 @@ const GalleryPage: React.FC = () => {
           <p className="text-base drop-shadow-md">{place.description}</p>
       </div>
 
-       {/* Botón para volver al mapa */}
+       {/* ⚙️ El botón ahora redirige al mapa y ha sido actualizado visualmente. */}
        <button onClick={() => navigate('/')} className="absolute bottom-6 right-6 z-20 p-4 bg-lake rounded-full text-white shadow-lg hover:bg-lake-dark transition-transform hover:scale-110 flex items-center gap-2">
          <Map size={24}/>
          <span className="font-semibold hidden sm:block">Volver al Mapa</span>

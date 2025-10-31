@@ -25,14 +25,14 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/profile" element={<ProfilePage />} />
-            {/* 💡 Ruta de navegación principal, accesible desde el BottomNavBar */}
-            <Route path="/navigate" element={<NavigationPage />} />
           </Route>
           
           {/* ⚙️ Rutas a pantalla completa que no muestran la navegación principal */}
           <Route path="/scan/:id" element={<ScannerPage />} />
           <Route path="/gallery/:id" element={<GalleryPage />} />
-          {/* 💡 Ruta de navegación a un destino específico, accesible desde HomePage */}
+          
+          {/* 💡 Se reintroducen las rutas de navegación a pantalla completa */}
+          <Route path="/navigate" element={<NavigationPage />} />
           <Route path="/navigate/:id" element={<NavigationPage />} />
           
           {/* Redirección para rutas no encontradas */}
