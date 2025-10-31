@@ -83,8 +83,7 @@ const NavigationPage: React.FC = () => {
     // 🧩 Este useEffect es el corazón de la navegación en tiempo real.
     //    Se activa al montar la página y solicita la ubicación.
     React.useEffect(() => {
-        if (!place) return;
-
+        // En modo selección (sin ID), también pedimos la ubicación para centrar el mapa.
         const watchId = navigator.geolocation.watchPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
@@ -101,32 +100,30 @@ const NavigationPage: React.FC = () => {
         );
 
         return () => navigator.geolocation.clearWatch(watchId);
-    }, [place, navigate]);
+    }, [navigate]);
 
     // ⚙️ Este efecto centra el mapa en el usuario cuando comienza el seguimiento.
     React.useEffect(() => {
         if (isTracking && userPosition && mapRef.current) {
-            mapRef.current.setView([userPosition.lat, userPosition.lng], 17); // Zoom más cercano para navegación
+            mapRef.current.panTo([userPosition.lat, userPosition.lng]);
         }
     }, [isTracking, userPosition]);
     
     const distance = React.useMemo(() => userPosition && place ? getDistanceFromLatLonInKm(userPosition, place.coordinates) : null, [userPosition, place]);
     const isNearby = distance !== null && distance < ARRIVAL_THRESHOLD_KM;
-    const etaMinutes = distance ? Math.round((distance / 40) * 60) : null; // Simulación de ETA a 40km/h
+    const etaMinutes = distance ? Math.round((distance / 5) * 60) : null; // Simulación de ETA a 5km/h (caminando)
 
     // --- MODO SELECCIÓN: Si no hay 'id' en la URL ---
     if (!id) {
         return (
             <div className="h-full w-full relative">
-                <MapContainer center={[10.3, -67.6]} zoom={9} ref={mapRef} className="h-full w-full z-0" zoomControl={false}>
+                <MapContainer center={userPosition ? [userPosition.lat, userPosition.lng] : [10.3, -67.6]} zoom={9} ref={mapRef} className="h-full w-full z-0" zoomControl={false}>
                     <TileLayer url={isDarkMode ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"} />
+                    {userPosition && <Marker position={[userPosition.lat, userPosition.lng]} icon={userIcon} />}
                     {TOURIST_PLACES.map((p) => (
                         <Marker key={`select-marker-${p.id}`} position={[p.coordinates.lat, p.coordinates.lng]} icon={isUnlocked(p.id) ? unlockedPlaceIcon : lockedPlaceIcon} eventHandlers={{ click: () => navigate(`/navigate/${p.id}`) }} />
                     ))}
                 </MapContainer>
-                <button onClick={() => navigate('/')} className="absolute top-4 left-4 z-10 p-3 bg-white/50 backdrop-blur-sm rounded-full text-gray-800 dark:text-white dark:bg-gray-800/50 hover:bg-white/70 dark:hover:bg-gray-700/70 transition-colors">
-                    <ArrowLeft />
-                </button>
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 p-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-md">
                     <h1 className="text-lg font-bold text-gray-900 dark:text-white">Selecciona un destino</h1>
                 </div>
@@ -140,14 +137,14 @@ const NavigationPage: React.FC = () => {
 
     return (
         <div className="h-full w-full relative bg-gray-800">
-            <MapContainer center={initialCenter} zoom={13} ref={mapRef} className="h-full w-full z-0" zoomControl={false} scrollWheelZoom={isTracking ? false : true} dragging={isTracking ? false : true} touchZoom={isTracking ? false : true}>
+            <MapContainer center={initialCenter} zoom={13} ref={mapRef} className="h-full w-full z-0" zoomControl={false} scrollWheelZoom={false} dragging={!isTracking} touchZoom={!isTracking}>
                 <TileLayer url={isDarkMode ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"} />
                 {userPosition && <Marker position={[userPosition.lat, userPosition.lng]} icon={userIcon} />}
                 <Marker position={[place.coordinates.lat, place.coordinates.lng]} icon={destinationIcon} />
-                {userPosition && <Polyline positions={[[userPosition.lat, userPosition.lng], [place.coordinates.lat, place.coordinates.lng]]} color="#007BFF" weight={6} />}
+                {userPosition && <Polyline positions={[[userPosition.lat, userPosition.lng], [place.coordinates.lat, place.coordinates.lng]]} color="#007BFF" weight={6} dashArray="10, 10" />}
             </MapContainer>
             
-            <button onClick={() => isTracking ? setIsTracking(false) : navigate('/navigate')} className="absolute top-4 left-4 z-[1001] p-3 bg-white/50 backdrop-blur-sm rounded-full text-gray-800 dark:text-white dark:bg-gray-800/50 hover:bg-white/70 dark:hover:bg-gray-700/70 transition-colors">
+            <button onClick={() => isTracking ? setIsTracking(false) : navigate('/')} className="absolute top-4 left-4 z-[1001] p-3 bg-white/50 backdrop-blur-sm rounded-full text-gray-800 dark:text-white dark:bg-gray-800/50 hover:bg-white/70 dark:hover:bg-gray-700/70 transition-colors">
                 <ArrowLeft />
             </button>
             

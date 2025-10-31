@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Map } from 'lucide-react';
+import { Map, Compass } from 'lucide-react';
 
 // 🧩 Componente de la barra de navegación inferior.
 //    Su única responsabilidad (SRP) es mostrar los enlaces de navegación principales
@@ -30,6 +30,14 @@ const BottomNavBar: React.FC = () => {
                         <>
                             <Map size={24} />
                             <span className={`text-xs font-semibold`}>Mapa</span>
+                        </>
+                    )}
+                </NavLink>
+                <NavLink to="/navigate" className={navLinkClasses}>
+                    {({ isActive }) => (
+                        <>
+                           <Compass size={24} />
+                           <span className={`text-xs font-semibold`}>Navegar</span>
                         </>
                     )}
                 </NavLink>

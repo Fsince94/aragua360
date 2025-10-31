@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
@@ -6,8 +5,8 @@ import { usePlaces } from '../hooks/usePlaces';
 import { TOURIST_PLACES } from '../constants';
 import type { Place } from '../types';
 import L from 'leaflet';
-import FloatingActionButton from '../components/FloatingActionButton';
-import { Lock, Unlock, MapPin } from 'lucide-react';
+// ⚙️ Modificado: Se añade 'LocateFixed' para el nuevo botón y se eliminan iconos no utilizados.
+import { Lock, Unlock, LocateFixed } from 'lucide-react';
 
 // ⚙️ Usamos 'L.divIcon' para crear íconos de marcador personalizados con TailwindCSS.
 //    Esto nos da total control sobre la apariencia de los marcadores.
@@ -45,10 +44,13 @@ const MapPage: React.FC = () => {
     }
   };
   
+  // 💡 Esta función utiliza la API de geolocalización del navegador para centrar el mapa.
+  //    'useCallback' previene que la función se recree innecesariamente en cada renderizado.
   const centerOnUser = useCallback(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
+        // 'flyTo' anima suavemente el mapa a la nueva ubicación.
         mapRef.current?.flyTo([latitude, longitude], 15);
       },
       (err) => {
@@ -64,7 +66,8 @@ const MapPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-full w-full">
+    // ⚙️ Se añade 'relative' para que el posicionamiento absoluto del botón flotante funcione correctamente.
+    <div className="h-full w-full relative">
       <MapContainer center={position} zoom={9} ref={mapRef} className="h-full w-full z-0" zoomControl={false}>
         <TileLayer
           url={isDarkMode 
@@ -99,7 +102,15 @@ const MapPage: React.FC = () => {
           );
         })}
       </MapContainer>
-      <FloatingActionButton centerOnUser={centerOnUser}/>
+      {/* 🧩 Botón Flotante de Acción (FAB) para centrar en la ubicación del usuario.
+          Se posiciona de forma absoluta sobre el mapa y tiene una única responsabilidad. */}
+      <button 
+        onClick={centerOnUser} 
+        aria-label="Centrar en mi ubicación" 
+        className="absolute bottom-6 right-6 z-[1000] p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg text-brand-green dark:text-white transition-transform hover:scale-110"
+      >
+          <LocateFixed size={24} />
+      </button>
     </div>
   );
 };

@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 import ScannerPage from './pages/ScannerPage';
 import GalleryPage from './pages/GalleryPage';
+import NavigationPage from './pages/NavigationPage';
 
 // 💡 Este componente App es el punto de entrada de la aplicación.
 //    Se ha refactorizado para usar una estructura de enrutamiento anidada.
@@ -24,14 +25,17 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            {/* 💡 Ruta de navegación principal, accesible desde el BottomNavBar */}
+            <Route path="/navigate" element={<NavigationPage />} />
           </Route>
           
           {/* ⚙️ Rutas a pantalla completa que no muestran la navegación principal */}
           <Route path="/scan/:id" element={<ScannerPage />} />
           <Route path="/gallery/:id" element={<GalleryPage />} />
+          {/* 💡 Ruta de navegación a un destino específico, accesible desde HomePage */}
+          <Route path="/navigate/:id" element={<NavigationPage />} />
           
-          {/* Redirección para rutas antiguas o no encontradas */}
-          <Route path="/navigate/:id?" element={<Navigate to="/" replace />} />
+          {/* Redirección para rutas no encontradas */}
           <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>

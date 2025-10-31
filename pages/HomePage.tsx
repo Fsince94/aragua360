@@ -5,7 +5,7 @@ import { usePlaces } from '../hooks/usePlaces';
 import { TOURIST_PLACES } from '../constants';
 import type { Place } from '../types';
 import L from 'leaflet';
-import { Lock, Unlock, Map as MapIcon, List, LocateFixed } from 'lucide-react';
+import { Lock, Unlock, Map as MapIcon, List, LocateFixed, Compass } from 'lucide-react';
 
 // ⚙️ Usamos 'L.divIcon' para crear íconos de marcador personalizados, adaptados a la nueva paleta de colores.
 const createIcon = (isUnlocked: boolean) => {
@@ -54,7 +54,7 @@ const HomePage: React.FC = () => {
         });
     }, [filter, isUnlocked]);
     
-    const handlePlaceClick = (place: Place) => {
+    const handlePrimaryAction = (place: Place) => {
         if (isUnlocked(place.id)) {
             navigate(`/gallery/${place.id}`);
         } else {
@@ -126,15 +126,21 @@ const HomePage: React.FC = () => {
                         {filteredPlaces.map((place) => {
                             const unlocked = isUnlocked(place.id);
                             return (
-                                <Marker key={place.id} position={[place.coordinates.lat, place.coordinates.lng]} icon={unlocked ? unlockedIcon : lockedIcon} eventHandlers={{ click: () => handlePlaceClick(place) }}>
+                                <Marker key={place.id} position={[place.coordinates.lat, place.coordinates.lng]} icon={unlocked ? unlockedIcon : lockedIcon} eventHandlers={{ click: () => {} }}>
                                     <Popup>
                                         <div className="text-center w-48">
                                             <h3 className="font-bold text-base mb-1">{place.name}</h3>
                                             <p className="text-xs mb-2">{place.description}</p>
-                                            <button onClick={() => handlePlaceClick(place)} className={`w-full py-2 px-3 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${unlocked ? 'bg-brand-yellow text-gray-900 hover:opacity-90' : 'bg-brand-green text-white hover:opacity-90'}`}>
-                                                {unlocked ? <Unlock size={14} /> : <Lock size={14} />}
-                                                {unlocked ? 'Ver Galería' : 'Escanear QR'}
-                                            </button>
+                                            <div className="flex flex-col gap-2">
+                                                <button onClick={() => handlePrimaryAction(place)} className={`w-full py-2 px-3 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${unlocked ? 'bg-brand-yellow text-gray-900 hover:opacity-90' : 'bg-brand-green text-white hover:opacity-90'}`}>
+                                                    {unlocked ? <Unlock size={14} /> : <Lock size={14} />}
+                                                    {unlocked ? 'Ver Galería' : 'Escanear QR'}
+                                                </button>
+                                                <button onClick={() => navigate(`/navigate/${place.id}`)} className="w-full py-2 px-3 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600">
+                                                    <Compass size={14} />
+                                                    Navegar
+                                                </button>
+                                            </div>
                                         </div>
                                     </Popup>
                                 </Marker>
@@ -150,14 +156,17 @@ const HomePage: React.FC = () => {
                     {filteredPlaces.map(place => {
                         const unlocked = isUnlocked(place.id);
                         return (
-                            <li key={place.id} onClick={() => handlePlaceClick(place)} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md flex items-center gap-4 cursor-pointer transition-transform hover:scale-[1.02]">
-                                <div className={`flex-shrink-0 p-3 rounded-full ${unlocked ? 'bg-brand-yellow/20 text-brand-yellow' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}>
+                            <li key={place.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md flex items-center gap-4 transition-transform hover:scale-[1.02]">
+                                <div className={`flex-shrink-0 p-3 rounded-full ${unlocked ? 'bg-brand-yellow/20 text-brand-yellow' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`} onClick={() => handlePrimaryAction(place)} >
                                     {unlocked ? <Unlock size={24} /> : <Lock size={24} />}
                                 </div>
-                                <div className="flex-grow min-w-0">
+                                <div className="flex-grow min-w-0" onClick={() => handlePrimaryAction(place)}>
                                     <h3 className="font-bold text-gray-800 dark:text-white truncate">{place.name}</h3>
                                     <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{place.description}</p>
                                 </div>
+                                <button onClick={() => navigate(`/navigate/${place.id}`)} aria-label={`Navegar a ${place.name}`} className="flex-shrink-0 p-3 rounded-full bg-gray-100 dark:bg-gray-700 text-brand-green dark:text-brand-white hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                    <Compass size={22} />
+                                </button>
                             </li>
                         );
                     })}
