@@ -2,6 +2,9 @@ import React from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+// FIX: Workaround for a TypeScript error where framer-motion props are not recognized.
+const MotionDiv = motion.div as any;
+
 interface ThemeToggleProps {
   isDarkMode: boolean;
   toggleTheme: () => void;
@@ -16,7 +19,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ isDarkMode, toggleTheme }) =>
       onClick={toggleTheme}
       className="p-2 bg-gray-200 dark:bg-gray-700 rounded-full text-gray-800 dark:text-gray-200 shadow-inner transition-colors"
     >
-      <motion.div
+      <MotionDiv
         key={isDarkMode ? 'moon' : 'sun'}
         initial={{ y: -20, opacity: 0, rotate: -90 }}
         animate={{ y: 0, opacity: 1, rotate: 0 }}
@@ -24,7 +27,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ isDarkMode, toggleTheme }) =>
         transition={{ duration: 0.3 }}
       >
         {isDarkMode ? <Sun size={20} className="text-brand-yellow" /> : <Moon size={20} className="text-brand-green" />}
-      </motion.div>
+      </MotionDiv>
     </button>
   );
 };

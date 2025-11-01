@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""/>
+      
+    <!-- 🧩 Librerías para el panel de administración -->
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/browser/umd/zxing-browser.min.js"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -60,7 +64,7 @@
 }
 </script>
 </head>
-  <body class="bg-brand-white dark:bg-gray-950 transition-colors duration-300">
+  <body class="bg-brand-white dark:bg-gray-950 text-black dark:text-brand-white transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

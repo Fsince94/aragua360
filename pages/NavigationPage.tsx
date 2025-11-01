@@ -1,13 +1,15 @@
-
 import React from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { TOURIST_PLACES } from '../constants';
-import type { Coordinates, Place } from '../types';
-import { ArrowLeft, ArrowUp, Camera, Flag, Send } from 'lucide-react';
+import { useDynamicPlaces } from '../hooks/useDynamicPlaces'; // 💡 Se importa el hook para datos dinámicos.
+import type { Coordinates, AdminPlace } from '../types';
+import { ArrowLeft, ArrowUp, Camera, Flag, Send, Navigation as NavigationIcon } from 'lucide-react';
 import { usePlaces } from '../hooks/usePlaces';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// FIX: Workaround for a TypeScript error where framer-motion props are not recognized.
+const MotionDiv = motion.div as any;
 
 // 💡 Haversine formula to calculate distance between two points on Earth.
 //    Es un buen ejemplo de una función de utilidad pura: recibe datos, retorna un resultado, sin efectos secundarios.
@@ -17,7 +19,7 @@ function getDistanceFromLatLonInKm(coord1: Coordinates, coord2: Coordinates): nu
   const dLon = deg2rad(coord2.lng - coord1.lng);
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(coord1.lat)) * Math.cos(deg2rad(coord2.lat)) *
+    Math.cos(deg2rad(coord1.lat)) * Math.cos(deg2rad(coord1.lat)) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const d = R * c; // Distance in km
@@ -67,23 +69,20 @@ const NavigationPage: React.FC = () => {
     const { id } = useParams<{ id?: string }>();
     const navigate = useNavigate();
     const { isUnlocked } = usePlaces();
+    const { places, isLoading } = useDynamicPlaces(); // 💡 Se obtienen lugares y estado de carga del contexto.
     const mapRef = React.useRef<L.Map | null>(null);
     const isDarkMode = document.documentElement.classList.contains('dark');
 
-    const place = React.useMemo(() => TOURIST_PLACES.find(p => p.id === id), [id]);
+    // ⚙️ Se busca el lugar en la lista dinámica.
+    const place = React.useMemo(() => places.find(p => p.id === id), [id, places]);
 
     const [userPosition, setUserPosition] = React.useState<Coordinates | null>(null);
     const [isTracking, setIsTracking] = React.useState(false);
     
-    // 💡 Optimización de rendimiento: Memoizamos los íconos de los lugares.
-    //    Esto evita que los íconos se recalculen en cada renderizado de la vista de selección.
     const unlockedPlaceIcon = React.useMemo(() => createPlaceIcon(true), []);
     const lockedPlaceIcon = React.useMemo(() => createPlaceIcon(false), []);
 
-    // 🧩 Este useEffect es el corazón de la navegación en tiempo real.
-    //    Se activa al montar la página y solicita la ubicación.
     React.useEffect(() => {
-        // En modo selección (sin ID), también pedimos la ubicación para centrar el mapa.
         const watchId = navigator.geolocation.watchPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
@@ -102,60 +101,80 @@ const NavigationPage: React.FC = () => {
         return () => navigator.geolocation.clearWatch(watchId);
     }, [navigate]);
 
-    // ⚙️ Este efecto centra el mapa en el usuario cuando comienza el seguimiento.
     React.useEffect(() => {
         if (isTracking && userPosition && mapRef.current) {
             mapRef.current.panTo([userPosition.lat, userPosition.lng]);
         }
     }, [isTracking, userPosition]);
     
-    const distance = React.useMemo(() => userPosition && place ? getDistanceFromLatLonInKm(userPosition, place.coordinates) : null, [userPosition, place]);
+    // ⚙️ Las coordenadas se leen directamente de 'lat' y 'lng'.
+    const placeCoordinates = place ? { lat: place.lat, lng: place.lng } : null;
+    const distance = React.useMemo(() => userPosition && placeCoordinates ? getDistanceFromLatLonInKm(userPosition, placeCoordinates) : null, [userPosition, placeCoordinates]);
     const isNearby = distance !== null && distance < ARRIVAL_THRESHOLD_KM;
-    const etaMinutes = distance ? Math.round((distance / 5) * 60) : null; // Simulación de ETA a 5km/h (caminando)
+    const etaMinutes = distance ? Math.round((distance / 5) * 60) : null;
 
-    // --- MODO SELECCIÓN: Si no hay 'id' en la URL ---
+    // --- MODO EXPLORACIÓN/SELECCIÓN: Si no hay 'id' en la URL ---
     if (!id) {
         return (
             <div className="h-full w-full relative">
                 <MapContainer center={userPosition ? [userPosition.lat, userPosition.lng] : [10.3, -67.6]} zoom={9} ref={mapRef} className="h-full w-full z-0" zoomControl={false}>
                     <TileLayer url={isDarkMode ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"} />
                     {userPosition && <Marker position={[userPosition.lat, userPosition.lng]} icon={userIcon} />}
-                    {TOURIST_PLACES.map((p) => (
-                        <Marker key={`select-marker-${p.id}`} position={[p.coordinates.lat, p.coordinates.lng]} icon={isUnlocked(p.id) ? unlockedPlaceIcon : lockedPlaceIcon} eventHandlers={{ click: () => navigate(`/navigate/${p.id}`) }} />
-                    ))}
+                    {/* 💡 Se mapean los lugares desde el contexto dinámico. */}
+                    {!isLoading && places.map((p) => {
+                        const unlocked = isUnlocked(p.id);
+                        return (
+                            <Marker key={`select-marker-${p.id}`} position={[p.lat, p.lng]} icon={unlocked ? unlockedPlaceIcon : lockedPlaceIcon}>
+                                <Popup>
+                                    <div className="text-center font-sans">
+                                      <h3 className="font-bold text-lg mb-1">{p.name}</h3>
+                                      {/* <p className="text-sm mb-3 text-gray-600">{p.description}</p> */}
+                                       <button
+                                        onClick={() => navigate(`/navigate/${p.id}`)}
+                                        className="w-full py-2 px-4 rounded-lg font-semibold text-white transition-colors flex items-center justify-center gap-2 bg-brand-green hover:bg-green-700"
+                                      >
+                                        <NavigationIcon size={16} />
+                                        Navegar
+                                      </button>
+                                    </div>
+                                </Popup>
+                            </Marker>
+                        );
+                    })}
                 </MapContainer>
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 p-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-md">
-                    <h1 className="text-lg font-bold text-gray-900 dark:text-white">Selecciona un destino</h1>
+                    <h1 className="text-lg font-bold">Mapa de Aragua</h1>
                 </div>
             </div>
         );
     }
     
+    if (isLoading) return <div className="h-full w-full flex items-center justify-center">Cargando...</div>
     if (!place) return <Navigate to="/navigate" replace />;
 
-    const initialCenter: [number, number] = userPosition ? [userPosition.lat, userPosition.lng] : [place.coordinates.lat, place.coordinates.lng];
+    const initialCenter: [number, number] = userPosition ? [userPosition.lat, userPosition.lng] : [place.lat, place.lng];
 
     return (
         <div className="h-full w-full relative bg-gray-800">
             <MapContainer center={initialCenter} zoom={13} ref={mapRef} className="h-full w-full z-0" zoomControl={false} scrollWheelZoom={false} dragging={!isTracking} touchZoom={!isTracking}>
                 <TileLayer url={isDarkMode ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"} />
                 {userPosition && <Marker position={[userPosition.lat, userPosition.lng]} icon={userIcon} />}
-                <Marker position={[place.coordinates.lat, place.coordinates.lng]} icon={destinationIcon} />
-                {userPosition && <Polyline positions={[[userPosition.lat, userPosition.lng], [place.coordinates.lat, place.coordinates.lng]]} color="#007BFF" weight={6} dashArray="10, 10" />}
+                <Marker position={[place.lat, place.lng]} icon={destinationIcon} />
+                {userPosition && <Polyline positions={[[userPosition.lat, userPosition.lng], [place.lat, place.lng]]} color="#007BFF" weight={6} dashArray="10, 10" />}
             </MapContainer>
             
-            <button onClick={() => isTracking ? setIsTracking(false) : navigate('/')} className="absolute top-4 left-4 z-[1001] p-3 bg-white/50 backdrop-blur-sm rounded-full text-gray-800 dark:text-white dark:bg-gray-800/50 hover:bg-white/70 dark:hover:bg-gray-700/70 transition-colors">
+            <button onClick={() => isTracking ? setIsTracking(false) : navigate('/navigate')} className="absolute top-4 left-4 z-[1001] p-3 bg-white/50 backdrop-blur-sm rounded-full text-black dark:text-white dark:bg-gray-800/50 hover:bg-white/70 dark:hover:bg-gray-700/70 transition-colors">
                 <ArrowLeft />
             </button>
             
             <AnimatePresence>
                 {!isTracking && (
-                    <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="absolute bottom-0 left-0 right-0 z-10 p-4">
+                    <MotionDiv initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="absolute bottom-0 left-0 right-0 z-10 p-4">
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-4 max-w-lg mx-auto">
                             <div className="flex justify-between items-center gap-4">
                                 <div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Destino</p>
-                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{place.name}</h2>
+                                    <h2 className="text-xl font-bold">{place.name}</h2>
                                     <p className="text-sm text-gray-600 dark:text-gray-300">
                                       {distance ? `${distance.toFixed(1)} km de distancia` : 'Calculando distancia...'}
                                     </p>
@@ -165,7 +184,7 @@ const NavigationPage: React.FC = () => {
                                 </button>
                             </div>
                         </div>
-                    </motion.div>
+                    </MotionDiv>
                 )}
             </AnimatePresence>
 
@@ -173,7 +192,7 @@ const NavigationPage: React.FC = () => {
                 {isTracking && (
                 <>
                     {/* 🧩 UI de Navegación Activa */}
-                    <motion.div initial={{ y: '-200%' }} animate={{ y: 0 }} exit={{ y: '-200%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="absolute top-0 left-0 right-0 z-[1001] p-4">
+                    <MotionDiv initial={{ y: '-200%' }} animate={{ y: 0 }} exit={{ y: '-200%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="absolute top-0 left-0 right-0 z-[1001] p-4">
                          <div className="bg-brand-green text-white rounded-lg shadow-2xl p-4 max-w-lg mx-auto flex items-center gap-4">
                              <div className="flex-shrink-0">
                                  {isNearby ? <Flag size={40} /> : <ArrowUp size={40} />}
@@ -183,9 +202,9 @@ const NavigationPage: React.FC = () => {
                                  <p className="text-base">{isNearby ? `Ya puedes escanear el código QR en ${place.name}.` : 'La línea azul muestra la dirección general.'}</p>
                              </div>
                          </div>
-                    </motion.div>
+                    </MotionDiv>
                     
-                    <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="absolute bottom-0 left-0 right-0 z-[1001] p-4">
+                    <MotionDiv initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="absolute bottom-0 left-0 right-0 z-[1001] p-4">
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-4 max-w-lg mx-auto">
                             <div className="flex justify-between items-start mb-3">
                                 <div className="text-left">
@@ -194,7 +213,7 @@ const NavigationPage: React.FC = () => {
                                 </div>
                                 <div className="text-right">
                                      <p className="text-sm text-gray-500 dark:text-gray-400">Destino</p>
-                                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">{place.name}</h3>
+                                     <h3 className="text-lg font-bold">{place.name}</h3>
                                 </div>
                             </div>
                             {isNearby ? (
@@ -207,7 +226,7 @@ const NavigationPage: React.FC = () => {
                                 </button>
                             )}
                         </div>
-                    </motion.div>
+                    </MotionDiv>
                 </>
                 )}
              </AnimatePresence>

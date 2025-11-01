@@ -1,27 +1,31 @@
 import React, { useMemo } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { usePlaces } from '../hooks/usePlaces';
-import { TOURIST_PLACES } from '../constants';
-import { ArrowLeft, Map } from 'lucide-react';
+import { useDynamicPlaces } from '../hooks/useDynamicPlaces'; // 💡 Se importa el hook de datos dinámicos.
+import { ArrowLeft } from 'lucide-react';
 
 const GalleryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isUnlocked } = usePlaces();
+  const { places: dynamicPlaces, isLoading } = useDynamicPlaces(); // ⚙️ Se obtienen los lugares del contexto.
   
-  // 🧩 'useMemo' optimiza el rendimiento al evitar que la búsqueda del lugar se repita
-  //    en cada render, a menos que el 'id' cambie.
-  const place = useMemo(() => TOURIST_PLACES.find(p => p.id === id), [id]);
+  // 🧩 'useMemo' ahora busca el lugar en la lista dinámica obtenida del contexto.
+  const place = useMemo(() => dynamicPlaces.find(p => p.id === id), [id, dynamicPlaces]);
 
-  // ⚙️ Lógica de protección de ruta. Si el lugar no existe o no está desbloqueado,
-  //    se redirige al usuario al mapa principal. Esto asegura que solo el contenido
-  //    autorizado sea accesible.
+  // ⚙️ Se añade una comprobación de carga para evitar renderizados prematuros.
+  if (isLoading) {
+    return <div className="h-full w-full bg-black flex items-center justify-center text-white">Cargando galería...</div>;
+  }
+  
+  // ⚙️ Lógica de protección de ruta. Si el lugar no existe o no está desbloqueado, se redirige.
   if (!place || !isUnlocked(place.id)) {
     return <Navigate to="/" replace />;
   }
 
   return (
     <div className="relative h-full w-full bg-black flex flex-col justify-end">
+      {/* 💡 Se usa 'imageUrl' que es el campo disponible en los datos dinámicos. */}
       <img 
         src={place.imageUrl} 
         alt={`Vista de ${place.name}`} 
@@ -39,14 +43,8 @@ const GalleryPage: React.FC = () => {
       {/* Contenido de texto */}
       <div className="relative z-20 p-6 text-white">
           <h1 className="text-3xl font-bold mb-2 drop-shadow-lg">{place.name}</h1>
-          <p className="text-base drop-shadow-md">{place.description}</p>
+          {/* ⚙️ El campo 'description' ya no se muestra porque no está garantizado en los datos dinámicos. */}
       </div>
-
-       {/* ⚙️ El botón ahora redirige al mapa y ha sido actualizado visualmente. */}
-       <button onClick={() => navigate('/')} className="absolute bottom-6 right-6 z-20 p-4 bg-lake rounded-full text-white shadow-lg hover:bg-lake-dark transition-transform hover:scale-110 flex items-center gap-2">
-         <Map size={24}/>
-         <span className="font-semibold hidden sm:block">Volver al Mapa</span>
-      </button>
     </div>
   );
 };

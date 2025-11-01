@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Map, Compass } from 'lucide-react';
+// ⚙️ Se actualiza el icono 'Map' por 'LayoutGrid' para reflejar que la página principal ahora es una galería.
+import { LayoutGrid, Compass } from 'lucide-react';
 
 // 🧩 Componente de la barra de navegación inferior.
 //    Su única responsabilidad (SRP) es mostrar los enlaces de navegación principales
@@ -18,29 +19,39 @@ const BottomNavBar: React.FC = () => {
     );
 
     const navLinkClasses = ({ isActive }: { isActive: boolean }): string => 
-        `flex flex-col items-center justify-center gap-1 w-full h-full transition-colors duration-200 ${
+        `flex flex-col items-center justify-center gap-1 w-full h-full transition-colors duration-200 pt-2 ${
             isActive ? 'text-brand-green dark:text-brand-yellow' : 'text-gray-500 dark:text-gray-400 hover:text-brand-green dark:hover:text-brand-yellow'
         }`;
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 h-20 bg-brand-white/90 dark:bg-gray-950/90 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 z-50">
+        // ⚙️ Rediseño: Se elimina el borde superior y se añade una sombra para un efecto flotante.
+        //    La estructura ahora es un flexbox con 3 items para acomodar el FAB en el centro.
+        <nav className="fixed bottom-0 left-0 right-0 h-20 bg-brand-white/90 dark:bg-gray-950/90 backdrop-blur-lg z-50 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.2)]">
             <div className="flex justify-around items-center h-full max-w-md mx-auto">
                 <NavLink to="/" className={navLinkClasses} end>
                     {({ isActive }) => (
                         <>
-                            <Map size={24} />
-                            <span className={`text-xs font-semibold`}>Mapa</span>
+                            {/* 💡 El ícono y texto se actualizan para reflejar la nueva vista de galería. */}
+                            <LayoutGrid size={24} />
+                            <span className={`text-xs font-semibold`}>Explorar</span>
                         </>
                     )}
                 </NavLink>
-                <NavLink to="/navigate" className={navLinkClasses}>
-                    {({ isActive }) => (
-                        <>
-                           <Compass size={24} />
-                           <span className={`text-xs font-semibold`}>Navegar</span>
-                        </>
-                    )}
+
+                {/* 💡 Botón de Acción Flotante (FAB): El elemento central y principal.
+                    Se eleva con un transform y una sombra, y tiene un estado activo distintivo. */}
+                <NavLink 
+                    to="/navigate" 
+                    aria-label="Iniciar navegación"
+                    className={({ isActive }) => 
+                        `w-16 h-16 bg-brand-green rounded-full shadow-lg flex items-center justify-center text-white
+                         transform transition-all duration-300 ease-in-out hover:scale-110 -translate-y-6
+                         ${isActive ? 'ring-4 ring-offset-4 ring-offset-brand-white dark:ring-offset-gray-950 ring-brand-yellow' : ''}`
+                    }
+                >
+                    <Compass size={32} />
                 </NavLink>
+
                 <NavLink to="/profile" className={navLinkClasses}>
                     {({ isActive }) => (
                         <>

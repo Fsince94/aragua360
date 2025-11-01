@@ -1,27 +1,27 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Html5QrcodeScanner, Html5QrcodeError, Html5QrcodeResult } from 'html5-qrcode';
 import { usePlaces } from '../hooks/usePlaces';
-import { TOURIST_PLACES } from '../constants';
+import { useDynamicPlaces } from '../hooks/useDynamicPlaces'; // 💡 Se usa el hook para datos dinámicos.
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 
 // 🧩 Este componente tiene una única responsabilidad (SRP): escanear y validar códigos QR.
-//    Maneja la lógica de la cámara, la decodificación del QR y la comunicación con el
-//    contexto de la aplicación para desbloquear lugares.
+//    Ahora es dinámico: compara el QR escaneado con los datos del 'DynamicPlacesContext'.
 
 const ScannerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { unlockPlace } = usePlaces();
+  const { places: dynamicPlaces, isLoading } = useDynamicPlaces(); // ⚙️ Obtiene lugares del contexto dinámico.
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const [scanResult, setScanResult] = useState<'success' | 'error' | null>(null);
 
-  const place = TOURIST_PLACES.find(p => p.id === id);
+  // 💡 Busca el lugar actual en la lista dinámica.
+  const place = !isLoading && dynamicPlaces.find(p => p.id === id);
 
   useEffect(() => {
-    if (!place) {
-      navigate('/');
+    // ⚙️ Se asegura de que los lugares dinámicos se hayan cargado antes de continuar.
+    if (isLoading || !place) {
       return;
     }
 
@@ -34,7 +34,8 @@ const ScannerPage: React.FC = () => {
 
     const onScanSuccess = (decodedText: string, decodedResult: Html5QrcodeResult) => {
       scanner.clear();
-      if (decodedText === place.qrCodeValue) {
+      // 💡 La validación ahora comprueba si el texto del QR coincide con la URL de la imagen del lugar.
+      if (decodedText === place.imageUrl) {
         setScanResult('success');
         unlockPlace(place.id);
         setTimeout(() => navigate(`/gallery/${place.id}`), 1500);
@@ -50,17 +51,15 @@ const ScannerPage: React.FC = () => {
 
     scanner.render(onScanSuccess, onScanError);
     
-    // ⚙️ La función de limpieza en 'useEffect' es crucial.
-    //    Se asegura de que, al desmontar el componente, se liberen los recursos
-    //    como la cámara, evitando fugas de memoria y comportamientos inesperados.
     return () => {
       scanner.clear().catch(error => {
         console.error("Failed to clear html5-qrcode-scanner.", error);
       });
     };
      // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, navigate, place, unlockPlace]);
+  }, [id, navigate, place, unlockPlace, isLoading]);
 
+  if (isLoading) return <div className="flex items-center justify-center h-full">Cargando...</div>;
   if (!place) return null;
 
   return (

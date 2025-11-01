@@ -8,9 +8,12 @@ import BottomNavBar from './BottomNavBar';
 //    componente 'Outlet' de React Router.
 const MainLayout: React.FC = () => {
     return (
-        // El padding-bottom (pb-20) evita que el contenido de la página quede oculto detrás de la barra de navegación fija.
-        <div className="h-full w-full pb-20">
-            <main className="h-full w-full overflow-y-auto">
+        // ⚙️ Se ajusta el layout para que el padding-bottom se aplique al área de contenido principal.
+        //    Esto asegura que en todas las páginas, el contenido finalice justo por encima de la
+        //    barra de navegación, evitando superposiciones. 'relative' es clave para contener
+        //    elementos 'absolute' de las páginas hijas.
+        <div className="h-full w-full">
+            <main className="relative h-full w-full overflow-y-auto pb-20">
                 <Outlet />
             </main>
             <BottomNavBar />
